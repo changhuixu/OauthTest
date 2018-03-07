@@ -35,52 +35,47 @@ namespace AspNetCoreGitHubAuth
             
             services.AddMvc();
             var secret =
-                "gmXC+5ZfKFi0ED3UYt4AkjkrwB+0pL8VP7pNjoBJcqLpoiQZ1QchXLzMyAOx/RG2PUl7SC8wgu9d0251ZMq6zZFBWsM3pjiJfyMOMTo8Bt9KoLH+1Vdc+lKDolE0mGF01cpz0uHPn59V6nQlTVGsDEsSP4vSkjF0yqh+xfNDIH0="
+                "abnmNTl5qOIi09uFFiKlWbFFhsOOyztvruJRRyENG4kMLpeitdcdJ2qey00/EIg7ILAA9qdrVh4wj6dBODJwzUb/EBu/PCYxk3OeHcOtY6fkwt2UfIM082y3PiNYfEeS8sQ0d+JKjrttJM2zOny6sSErkmy+hGEA6Wj+wnu9R9Q="
                     .Decrypt();
-            services.AddAuthentication()
-                .AddCookie(options=> options.LoginPath = new PathString("/Account/Login"))
+
+            services.AddAuthentication(options =>
+                    {
+                        options.DefaultChallengeScheme = "ITSOAUTH";
+                        options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                        options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                    }
+                )
+                .AddCookie()
                 .AddOAuth("ITSOAUTH", options =>
                 {
-                    options.ClientId = "chartfield";
+                    options.ClientId = "fbis-fst";
                     options.ClientSecret = secret;
-                    options.CallbackPath = new PathString("/Account/Login");
-                    options.Scope.Add("workflow.api.chartfield");
-                    
+                    options.CallbackPath = new PathString("/FST/Login");
+                    options.Scope.Add("workflow.api.fbis-fst");
+
                     options.AuthorizationEndpoint = "https://login.uiowa.edu/uip/auth.page";
                     options.TokenEndpoint = "https://login.uiowa.edu/uip/token.page";
-                  //  options.UserInformationEndpoint = "https://api.github.com/user";
-                    
-                    options.SaveTokens = true;
-                    
+                                //  options.UserInformationEndpoint = "https://api.github.com/user";
 
-//                    options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "UnivId");
-//                    options.ClaimActions.MapJsonKey(ClaimTypes.Name, "HawkId");
+                                options.SaveTokens = true;
+
+
+                    options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "uid");
+                    options.ClaimActions.MapJsonKey(ClaimTypes.Name, "hawkid");
 
                     options.Events = new OAuthEvents
                     {
-                        OnRedirectToAuthorizationEndpoint = async context =>
+                       OnCreatingTicket = async context =>
                         {
-                            var a = 3 + 3;
-                        },
-                        OnRemoteFailure = async context  =>
-                        {
-                            var a = 3 + 3;
-                        },
-                        OnTicketReceived = async context =>
-                        {
-                            var a = 3 + 3;
-                        },
-                        OnCreatingTicket = async context =>
-                        {
-                            var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
-                            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", context.AccessToken);
+                            //var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
+                            //request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                            //request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", context.AccessToken);
 
-                            var response = await context.Backchannel.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, context.HttpContext.RequestAborted);
-                            response.EnsureSuccessStatusCode();
+                            //var response = await context.Backchannel.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, context.HttpContext.RequestAborted);
+                            //response.EnsureSuccessStatusCode();
 
-                            var user = JObject.Parse(await response.Content.ReadAsStringAsync());
-
+                            //var user = JObject.Parse(await response.Content.ReadAsStringAsync());
+                            var user = context.TokenResponse.Response;
                             context.RunClaimActions(user);
                         }
                     };
