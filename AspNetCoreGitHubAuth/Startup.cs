@@ -16,6 +16,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 
+using UofI.Passwords;
+
 namespace AspNetCoreGitHubAuth
 {
     public class Startup
@@ -29,36 +31,45 @@ namespace AspNetCoreGitHubAuth
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
-        {
+        { 
+            
             services.AddMvc();
-
-            services.AddAuthentication(options =>
+            var secret =
+                "gmXC+5ZfKFi0ED3UYt4AkjkrwB+0pL8VP7pNjoBJcqLpoiQZ1QchXLzMyAOx/RG2PUl7SC8wgu9d0251ZMq6zZFBWsM3pjiJfyMOMTo8Bt9KoLH+1Vdc+lKDolE0mGF01cpz0uHPn59V6nQlTVGsDEsSP4vSkjF0yqh+xfNDIH0="
+                    .Decrypt();
+            services.AddAuthentication()
+                .AddCookie(options=> options.LoginPath = new PathString("/Account/Login"))
+                .AddOAuth("ITSOAUTH", options =>
                 {
-                    options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                    options.DefaultChallengeScheme = "GitHub";
-                })
-                .AddCookie()
-                .AddOAuth("GitHub", options =>
-                {
-                    options.ClientId = Configuration["GitHub:ClientId"];
-                    options.ClientSecret = Configuration["GitHub:ClientSecret"];
-                    options.CallbackPath = new PathString("/signin-github");
-
-                    options.AuthorizationEndpoint = "https://github.com/login/oauth/authorize";
-                    options.TokenEndpoint = "https://github.com/login/oauth/access_token";
-                    options.UserInformationEndpoint = "https://api.github.com/user";
-
+                    options.ClientId = "chartfield";
+                    options.ClientSecret = secret;
+                    options.CallbackPath = new PathString("/Account/Login");
+                    options.Scope.Add("workflow.api.chartfield");
+                    
+                    options.AuthorizationEndpoint = "https://login.uiowa.edu/uip/auth.page";
+                    options.TokenEndpoint = "https://login.uiowa.edu/uip/token.page";
+                  //  options.UserInformationEndpoint = "https://api.github.com/user";
+                    
                     options.SaveTokens = true;
+                    
 
-                    options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "id");
-                    options.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
-                    options.ClaimActions.MapJsonKey("urn:github:login", "login");
-                    options.ClaimActions.MapJsonKey("urn:github:url", "html_url");
-                    options.ClaimActions.MapJsonKey("urn:github:avatar", "avatar_url");
+//                    options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "UnivId");
+//                    options.ClaimActions.MapJsonKey(ClaimTypes.Name, "HawkId");
 
                     options.Events = new OAuthEvents
                     {
+                        OnRedirectToAuthorizationEndpoint = async context =>
+                        {
+                            var a = 3 + 3;
+                        },
+                        OnRemoteFailure = async context  =>
+                        {
+                            var a = 3 + 3;
+                        },
+                        OnTicketReceived = async context =>
+                        {
+                            var a = 3 + 3;
+                        },
                         OnCreatingTicket = async context =>
                         {
                             var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
@@ -88,11 +99,11 @@ namespace AspNetCoreGitHubAuth
             {
                 app.UseExceptionHandler("/Error");
             }
-
+//            app.UseMiddleware <StackifyMiddleware.RequestTracerMiddleware
             app.UseStaticFiles();
 
             app.UseAuthentication();
-
+            app.UseMiddleware<StackifyMiddleware.RequestTracerMiddleware>();
             app.UseMvc(routes =>
             {
                 routes.MapRoute(
