@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Claims;
+using System.Security.Principal;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -31,8 +32,11 @@ namespace AspNetCoreGitHubAuth
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
-        { 
-            
+        {
+
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddTransient<IPrincipal>(
+                provider => provider.GetService<IHttpContextAccessor>().HttpContext.User);
             services.AddMvc();
             var secret =
                 "abnmNTl5qOIi09uFFiKlWbFFhsOOyztvruJRRyENG4kMLpeitdcdJ2qey00/EIg7ILAA9qdrVh4wj6dBODJwzUb/EBu/PCYxk3OeHcOtY6fkwt2UfIM082y3PiNYfEeS8sQ0d+JKjrttJM2zOny6sSErkmy+hGEA6Wj+wnu9R9Q="
@@ -62,7 +66,7 @@ namespace AspNetCoreGitHubAuth
 
                     options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "uid");
                     options.ClaimActions.MapJsonKey(ClaimTypes.Name, "hawkid");
-
+                    options.ClaimActions.MapJsonKey(ITSOAUTHClaims.AccessToken, "access_token");
                     options.Events = new OAuthEvents
                     {
                        OnCreatingTicket = async context =>
@@ -77,6 +81,9 @@ namespace AspNetCoreGitHubAuth
                             //var user = JObject.Parse(await response.Content.ReadAsStringAsync());
                             var user = context.TokenResponse.Response;
                             context.RunClaimActions(user);
+                            var a = context.User;
+                            var b = context.Identity;
+                            var c = context.AccessToken;
                         }
                     };
                 });
@@ -106,5 +113,11 @@ namespace AspNetCoreGitHubAuth
                     template: "{controller}/{action=Index}/{id?}");
             });
         }
+    }
+
+    public static class ITSOAUTHClaims
+    {
+        public static string AccessToken = nameof(AccessToken);
+        public static string RefreshToken = nameof(RefreshToken);
     }
 }
