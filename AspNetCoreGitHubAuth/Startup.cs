@@ -95,7 +95,6 @@ namespace AspNetCoreGitHubAuth
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseBrowserLink();
             }
             else
             {
@@ -105,7 +104,6 @@ namespace AspNetCoreGitHubAuth
             app.UseStaticFiles();
 
             app.UseAuthentication();
-            app.UseMiddleware<StackifyMiddleware.RequestTracerMiddleware>();
             app.UseMvc(routes =>
             {
                 routes.MapRoute(
